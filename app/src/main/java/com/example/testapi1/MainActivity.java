@@ -3,6 +3,7 @@ package com.example.testapi1;
 import static com.android.volley.VolleyLog.TAG;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.media.MediaPlayer;
@@ -22,6 +23,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.testapi1.Adapter.MusicAdapter;
 import com.example.testapi1.Model.Artist.Singer;
 import com.example.testapi1.Model.Music.Item;
 import com.example.testapi1.Model.Music.MusicRelation;
@@ -35,24 +37,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private Button button;
     private Singer singer;
     private Item item;
     private MusicRelation musicRelation;
     private List<Item> itemList;
-    private ListView rcvItems;
-    private ArrayAdapter<String> adapter;
-
+    private RecyclerView rcvItems;
+    private MediaPlayer mediaPlayer;
+    private int i;
+    private MusicAdapter musicAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        button = (Button) findViewById(R.id.button);
+        i = -1;
         itemList = new ArrayList<>();
         rcvItems =  findViewById(R.id.rcvItems);
+        getData();
 
-
+        musicAdapter = new MusicAdapter(itemList);
+        rcvItems.setAdapter(musicAdapter);
+        rcvItems.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+    }
+    void getData(){
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         String url ="https://mp3.zing.vn/xhr/recommend?type=audio&id=ZWA7ODCU";
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
@@ -67,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
                                 String id = obOfItems.getString("id");
                                 String name = obOfItems.getString("name");
                                 String code = obOfItems.getString("code");
-                                String playlist_id = obOfItems.getString("playlist_id");
+//                                String playlist_id = obOfItems.getString("playlist_id");
                                 singer = new Singer();
                                 JSONArray artists = obOfItems.getJSONArray("artists");
                                 if (artists.length()>0){
@@ -86,8 +93,9 @@ public class MainActivity extends AppCompatActivity {
                                 String performer = obOfItems.getString("performer");
                                 String thumbnail = obOfItems.getString("thumbnail");
                                 int duration = Integer.parseInt(obOfItems.getString("duration"));
-                                Item item = new Item(id,name,code,playlist_id,singer,artists_names,performer,link,thumbnail,duration);
+                                Item item = new Item(id,name,code,"playlist_id",singer,artists_names,performer,link,thumbnail,duration);
                                 itemList.add(item);
+                                musicAdapter.notifyDataSetChanged();
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -101,53 +109,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
         requestQueue.add(jsonObjectRequest);
-//        button.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                MediaPlayer mp = new MediaPlayer();
-//                try {
-//                    mp.setDataSource("https://api.mp3.zing.vn/api/streaming/audio/"+itemList.get(0).getId()+"/320");
-//                    mp.prepare();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//
-//                mp.start();
-//
-//            }
-//        });
-        button.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-
-                return false;
-            }
-        });
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                List<String> stringList = new ArrayList<>();
-                for (int i = 0; i < itemList.size(); i++) {
-                    stringList.add(itemList.get(i).toString());
-                }
-                adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1,stringList);
-                rcvItems.setAdapter(adapter);
-            }
-        });
-
-        rcvItems.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                MediaPlayer mp = new MediaPlayer();
-                try {
-                    mp.setDataSource("https://api.mp3.zing.vn/api/streaming/audio/"+itemList.get(i).getId()+"/320");
-                    mp.prepare();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                mp.start();
-            }
-        });
     }
+
 }
